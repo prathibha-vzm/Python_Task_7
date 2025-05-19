@@ -1,0 +1,256 @@
+Question 1: Movie should have multiple media 
+--------------------------------------------
+# Table Creation 
+ MySQL  localhost:33060+ ssl  imdb  SQL > CREATE TABLE MOVIE_DETAILS
+                                          (
+                                           MOVIE_ID VARCHAR(25) PRIMARY KEY,
+                                           MOVIE_NAME VARCHAR(25) NOT NULL,
+                                           MOVIE_MEDIA_1 VARCHAR(10),
+                                           MOVIE_MEDIA_2 VARCHAR(10),
+                                           MOVIE_MEDIA_3 VARCHAR(10)
+                                         );
+Query OK, 0 rows affected (0.0096 sec)
+MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM MOVIE_DETAILS;
++------------+-------------------+---------------+---------------+---------------+
+| MOVIE_ID   | MOVIE_NAME        | MOVIE_MEDIA_1 | MOVIE_MEDIA_2 | MOVIE_MEDIA_3 |
++------------+-------------------+---------------+---------------+---------------+
+| MOV_ID_100 | GOOD NIGHT        | VIDEO         | NULL          | NULL          |
+| MOV_ID_101 | DD RETURNS        | NULL          | AUDIO         | NULL          |
+| MOV_ID_102 | VADA CHENNAI      | VIDEO         | NULL          | NULL          |
+| MOV_ID_103 | ELEPHANT WHISPERS | NULL          | NULL          | IMAGE         |
+| MOV_ID_104 | GOOD BAD UGLY     | VIDEO         | NULL          | NULL          |
+| MOV_ID_105 | ARANMANAI         | VIDEO         | NULL          | NULL          |
++------------+-------------------+---------------+---------------+---------------+
+6 rows in set (0.0010 sec)
++-----------------------------------------------------------------------------------+-----------------------------------------------------------------+
+Question 2: Movie can belong to multiple genre
+----------------------------------------------
+# Table Creation 
+MySQL  localhost:33060+ ssl  imdb  SQL > CREATE TABLE GENRE_DETAILS
+                                        (
+                                          GENRE_ID VARCHAR(25) NOT NULL,
+                                          MOVIE_ID VARCHAR(25) NOT NULL,
+                                          GENRE_HORROR VARCHAR(5),
+                                          GENRE_ACTION VARCHAR(5), 
+                                          GENRE_COMEDY VARCHAR(5),
+                                          GENRE_DOCUMENTARY VARCHAR(5),
+                                          PRIMARY KEY(GENRE_ID), 
+                                          FOREIGN KEY (MOVIE_ID) REFERENCES MOVIE_DETAILS(MOVIE_ID)
+                                        );
+
+ySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM GENRE_DETAILS;
++----------+------------+--------------+--------------+--------------+-------------------+
+| GENRE_ID | MOVIE_ID   | GENRE_HORROR | GENRE_ACTION | GENRE_COMEDY | GENRE_DOCUMENTARY |
++----------+------------+--------------+--------------+--------------+-------------------+
+| GN_ID_01 | MOV_ID_100 | NULL         | NULL         | YES          | NULL              |
+| GN_ID_02 | MOV_ID_101 | YES          | NULL         | NULL         | NULL              |
+| GN_ID_03 | MOV_ID_102 | NULL         | YES          | NULL         | NULL              |
+| GN_ID_04 | MOV_ID_103 | NULL         | NULL         | NULL         | YES               |
+| GN_ID_05 | MOV_ID_103 | NULL         | YES          | NULL         | NULL              |
+| GN_ID_06 | MOV_ID_105 | YES          | NULL         | YES          | NULL              |
++----------+------------+--------------+--------------+--------------+-------------------+
+6 rows in set (0.0013 sec)
+
+# create a stored procedure to make sure atleast one of the genre should be entered
+#Used notepad and saved as GENRE_PROCEDURE.sql
+DELIMITER $$
+
+CREATE PROCEDURE ENTER_ATLEAST_ONE_GENRE
+(
+ IN P_GENRE_ID VARCHAR(25),
+ IN P_MOVIE_ID VARCHAR(25) ,
+ IN P_GENRE_HORROR VARCHAR(5),
+ IN P_GENRE_ACTION VARCHAR(5),
+ IN P_GENRE_COMEDY VARCHAR(5),
+ IN P_GENRE_DOCUMENTARY VARCHAR(5)
+)
+
+BEGIN
+    IF (P_GENRE_HORROR IS NULL) AND
+       (P_GENRE_ACTION IS NULL) AND
+       (P_GENRE_COMEDY IS NULL) AND 
+       (P_GENRE_DOCUMENTARY IS NULL) 
+    THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT='GENRE CAN NOT BE EMPTY - FILL ATLEAST ONE';
+    ELSE
+        INSERT INTO GENRE_DETAILS
+        (
+         GENRE_ID, 
+	 MOVIE_ID,
+	 GENRE_HORROR, 
+	 GENRE_ACTION,
+	 GENRE_COMEDY, 
+         GENRE_DOCUMENTARY
+        ) VALUES
+        (
+         P_GENRE_ID, 
+	 P_MOVIE_ID,
+	 P_GENRE_HORROR, 
+	 P_GENRE_ACTION,
+	 P_GENRE_COMEDY, 
+         P_GENRE_DOCUMENTARY
+        );
+    END IF; 
+END$$
+
+DELIMITER ;
+
+# To run the procedure in command prompt  
+\source C:\Users\91956\Desktop\GENRE_PROCEDURE.sql
+Query OK, 0 rows affected (0.0116 sec)
+
+#Calling the function to insert values 
+#Inserting WRONG values by calling the procedure ENTER_ATLEAST_ONE_GENRE
+ MySQL  localhost:33060+ ssl  imdb  SQL > CALL ENTER_ATLEAST_ONE_GENRE('GN_ID_05','MOV_ID_103',NULL,NULL,NULL,NULL);
+ERROR: 1644: GENRE CAN NOT BE EMPTY - FILL ATLEAST ONE
+
+# Correct values 
+MySQL  localhost:33060+ ssl  imdb  SQL > INSERT INTO MOVIE_DETAILS VALUES('MOV_ID_104','GOOD BAD UGLY','VIDEO',NULL,NULL);
+Query OK, 1 row affected (0.0100 sec)
+
+MySQL  localhost:33060+ ssl  imdb  SQL > CALL ENTER_ATLEAST_ONE_GENRE('GN_ID_05','MOV_ID_103',NULL,'YES',NULL,NULL);
+Query OK, 1 row affected (0.0098 sec)
+
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM GENRE_DETAILS;
++----------+------------+--------------+--------------+--------------+-------------------+
+| GENRE_ID | MOVIE_ID   | GENRE_HORROR | GENRE_ACTION | GENRE_COMEDY | GENRE_DOCUMENTARY |
++----------+------------+--------------+--------------+--------------+-------------------+
+| GN_ID_01 | MOV_ID_100 | NULL         | NULL         | YES          | NULL              |
+| GN_ID_02 | MOV_ID_101 | YES          | NULL         | NULL         | NULL              |
+| GN_ID_03 | MOV_ID_102 | NULL         | YES          | NULL         | NULL              |
+| GN_ID_04 | MOV_ID_103 | NULL         | NULL         | NULL         | YES               |
+| GN_ID_05 | MOV_ID_103 | NULL         | YES          | NULL         | NULL              |
++----------+------------+--------------+--------------+--------------+-------------------+
+5 rows in set (0.0008 sec)
++-----------------------------------------------------------------------------------------------------+--------------------------------------------------------+
+Question 3: Movie can have multiple reviews and reviews can belongs to a user
+-----------------------------------------------------------------------------
+
+ MySQL  localhost:33060+ ssl  imdb  SQL >  INSERT INTO USER_DETAILS 
+                                           VALUES 
+                                           ('US_ID_11','RIYA'),
+                                           ('US_ID_12','ZOYA'),
+                                           ('US_ID_13','LAKSHMI'),
+                                           ('US_ID_14','DINESH');
+Query OK, 4 rows affected (0.0112 sec)
+
+Records: 4  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM USER_DETAILS;
++----------+-----------+
+| USER_ID  | USER_NAME |
++----------+-----------+
+| US_ID_11 | RIYA      |
+| US_ID_12 | ZOYA      |
+| US_ID_13 | LAKSHMI   |
+| US_ID_14 | DINESH    |
++----------+-----------+
+
+ MySQL  localhost:33060+ ssl  imdb  SQL > INSERT INTO USER_MOVIE_REVIEW 
+                                          VALUES
+                                          ('US_ID_11','MOV_ID_100','RW_ID_01','FEEL GOOD MOVIE','BEST CASTING','FAMILY SUBJECT'),
+                                          ('US_ID_11','MOV_ID_101','RW_ID_02','CAN BE BETTER','SANDHANAM COMEDY IS GOOD',NULL);
+Query OK, 2 rows affected (0.0101 sec)
+
+Records: 2  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM USER_MOVIE_REVIEW;
++----------+------------+-----------+-----------------+--------------------------+----------------+
+| USER_ID  | MOVIE_ID   | REVIEW_ID | REVIEW_1        | REVIEW_2                 | REVIEW_3       |
++----------+------------+-----------+-----------------+--------------------------+----------------+
+| US_ID_11 | MOV_ID_100 | RW_ID_01  | FEEL GOOD MOVIE | BEST CASTING             | FAMILY SUBJECT |
+| US_ID_11 | MOV_ID_101 | RW_ID_02  | CAN BE BETTER   | SANDHANAM COMEDY IS GOOD | NULL           |
++----------+------------+-----------+-----------------+--------------------------+----------------+
+
++------------------------------------------------------------------------------------------------------+--------------------------------------------------+
+
+Question 4: Artists can have multiple skills
+--------------------------------------------
+ MySQL  localhost:33060+ ssl  imdb  SQL >  CREATE TABLE ARTIST_DETAILS
+                                          (
+                                           ARTIST_ID VARCHAR(25) PRIMARY KEY,
+                                           ARTIST_NAME VARCHAR(25) NOT NULL,
+                                           ARTIST_CONTACT_MOBILE BIGINT NOT NULL,
+                                           SKILL_1 VARCHAR(25) NOT NULL, 
+                                           SKILL_2 VARCHAR(25), 
+                                           SKILL_3 VARCHAR(25)
+                                         );
+ Query OK, 0 rows affected (0.0173 sec)
+
+ MySQL  localhost:33060+ ssl  imdb  SQL > INSERT INTO ARTIST_DETAILS 
+                                          VALUES
+                                          ('AC_ID_21','MANIKANDAN',9090909090,'ACTOR','WRITER','DIRECTOR','MOV_ID_100'),
+                                          ('AC_ID_22','DHANUSH',7070770770,'ACTOR','LYRICAL WRITER','DIRECTOR','MOV_ID_102'),
+                                          ('AC_ID_23','SANDHANAM',1234567908,'ACTOR','COMEDIAN',NULL,'MOV_ID_101'),
+                                          ('AC_ID_24','AJITH KUMAR',9000000000,'ACTOR','RACER',NULL,'MOV_ID_104');
+Query OK, 4 rows affected (0.0095 sec)
+
+Records: 4  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM ARTIST_DETAILS;
++-----------+-------------+-----------------------+---------+----------------+----------+------------+
+| ARTIST_ID | ARTIST_NAME | ARTIST_CONTACT_MOBILE | SKILL_1 | SKILL_2        | SKILL_3  | MOVIE_ID   |
++-----------+-------------+-----------------------+---------+----------------+----------+------------+
+| AC_ID_21  | MANIKANDAN  |            9090909090 | ACTOR   | WRITER         | DIRECTOR | MOV_ID_100 |
+| AC_ID_22  | DHANUSH     |            7070770770 | ACTOR   | LYRICAL WRITER | DIRECTOR | MOV_ID_102 |
+| AC_ID_23  | SANDHANAM   |            1234567908 | ACTOR   | COMEDIAN       | NULL     | MOV_ID_101 |
+| AC_ID_24  | AJITH KUMAR |            9000000000 | ACTOR   | RACER          | NULL     | MOV_ID_104 |
++-----------+-------------+-----------------------+---------+----------------+----------+------------+
+4 rows in set (0.0006 sec)
+
++---------------------------------------------------------------------------------------------------------------+---------------------------------------+
+
+Question 5: Artist can perform multiple roles in a single film
+--------------------------------------------------------------
+MySQL  localhost:33060+ ssl  imdb  SQL > CREATE TABLE ARTIST_ROLE_DETAILS
+                                         (
+                                          ARTIST_ROLE_ID VARCHAR(25) PRIMARY KEY,
+                                          ARTIST_ID VARCHAR(25) NOT NULL, 
+                                          MOVIE_ID VARCHAR(25) NOT NULL,
+                                          ROLE_1 VARCHAR(25) NOT NULL,
+                                          ROLE_2 VARCHAR(25),
+                                          ROLE_3 VARCHAR(25), 
+                                          FOREIGN KEY (ARTIST_ID) REFERENCES ARTIST_DETAILS(ARTIST_ID),
+                                          FOREIGN KEY (MOVIE_ID) REFERENCES MOVIE_DETAILS(MOVIE_ID)
+                                        );
+Query OK, 0 rows affected (0.1202 sec)
+
+ MySQL  localhost:33060+ ssl  imdb  SQL > INSERT INTO ARTIST_ROLE_DETAILS
+                                          VALUES
+                                          ('AROLE_ID_01', 'AC_ID_21','MOV_ID_100','SON','HUSBAND','BROTHER'),
+                                          ('AROLE_ID_02', 'AC_ID_22','MOV_ID_102','GANGSTER','HUSBAND',NULL),
+                                          ('AROLE_ID_03', 'AC_ID_23','MOV_ID_101','GHOST RIDER',NULL,NULL),
+                                          ('AROLE_ID_04', 'AC_ID_24','MOV_ID_104','GANGSTER','HUSBAND','FATHER');
+Query OK, 4 rows affected (0.0101 sec)
+
+Records: 4  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM ARTIST_ROLE_DETAILS;
++----------------+-----------+------------+-------------+---------+---------+
+| ARTIST_ROLE_ID | ARTIST_ID | MOVIE_ID   | ROLE_1      | ROLE_2  | ROLE_3  |
++----------------+-----------+------------+-------------+---------+---------+
+| AROLE_ID_01    | AC_ID_21  | MOV_ID_100 | SON         | HUSBAND | BROTHER |
+| AROLE_ID_02    | AC_ID_22  | MOV_ID_102 | GANGSTER    | HUSBAND | NULL    |
+| AROLE_ID_03    | AC_ID_23  | MOV_ID_101 | GHOST RIDER | NULL    | NULL    |
+| AROLE_ID_04    | AC_ID_24  | MOV_ID_104 | GANGSTER    | HUSBAND | FATHER  |
++----------------+-----------+------------+-------------+---------+---------+
+4 rows in set (0.0006 sec)
+
++-----------------------------------------------------------------------------------+-------------------------------------------------------+
+
+Additional Queries:
+# Sub-Query to find the movie_name using review_id
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT MOVIE_NAME FROM MOVIE_DETAILS WHERE MOVIE_ID=(SELECT MOVIE_ID FROM USER_MOVIE_REVIEW WHERE REVIEW_ID ='RW_ID_01');
++------------+
+| MOVIE_NAME |
++------------+
+| GOOD NIGHT |
++------------+
+1 row in set (0.0094 sec)
+
+# JOIN concept 
+# To find the Artist name using movie_id and review_id from 3 different tables.
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT AD.ARTIST_NAME, MD.MOVIE_NAME FROM ARTIST_DETAILS AD JOIN MOVIE_DETAILS MD ON MD.MOVIE_ID=AD.MOVIE_ID WHERE MD.MOVIE_ID=(SELECT MOVIE_ID FROM USER_MOVIE_REVIEW WHERE REVIEW_ID ='RW_ID_01');
++-------------+------------+
+| ARTIST_NAME | MOVIE_NAME |
++-------------+------------+
+| MANIKANDAN  | GOOD NIGHT |
++-------------+------------+
+1 row in set (0.0012 sec)
