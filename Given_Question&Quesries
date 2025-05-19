@@ -22,6 +22,25 @@ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM MOVIE_DETAILS;
 | MOV_ID_105 | ARANMANAI         | VIDEO         | NULL          | NULL          |
 +------------+-------------------+---------------+---------------+---------------+
 6 rows in set (0.0010 sec)
+# USING UPDATE TO ADD MORE MEDIA TO A MOVIE
+ MySQL  localhost:33060+ ssl  imdb  SQL > UPDATE MOVIE_DETAILS 
+                                          SET MOVIE_MEDIA_2='AUDIO' 
+                                          WHERE MOVIE_ID='MOV_ID_102';
+Query OK, 1 row affected (0.0124 sec)
+
+Rows matched: 1  Changed: 1  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM MOVIE_DETAILS;
++------------+-------------------+---------------+---------------+---------------+
+| MOVIE_ID   | MOVIE_NAME        | MOVIE_MEDIA_1 | MOVIE_MEDIA_2 | MOVIE_MEDIA_3 |
++------------+-------------------+---------------+---------------+---------------+
+| MOV_ID_100 | GOOD NIGHT        | VIDEO         | NULL          | NULL          |
+| MOV_ID_101 | DD RETURNS        | NULL          | AUDIO         | NULL          |
+| MOV_ID_102 | VADA CHENNAI      | VIDEO         | AUDIO         | NULL          |
+| MOV_ID_103 | ELEPHANT WHISPERS | NULL          | NULL          | IMAGE         |
+| MOV_ID_104 | GOOD BAD UGLY     | VIDEO         | NULL          | NULL          |
+| MOV_ID_105 | ARANMANAI         | VIDEO         | NULL          | NULL          |
++------------+-------------------+---------------+---------------+---------------+
+6 rows in set (0.0009 sec)
 +-----------------------------------------------------------------------------------+-----------------------------------------------------------------+
 Question 2: Movie can belong to multiple genre
 ----------------------------------------------
@@ -127,7 +146,13 @@ Query OK, 1 row affected (0.0098 sec)
 Question 3: Movie can have multiple reviews and reviews can belongs to a user
 -----------------------------------------------------------------------------
 
- MySQL  localhost:33060+ ssl  imdb  SQL >  INSERT INTO USER_DETAILS 
+MySQL  localhost:33060+ ssl  imdb  SQL > CREATE TABLE USER_DETAILS
+                                         (
+                                          USER_ID VARCHAR(25) PRIMARY KEY,
+                                          USER_NAME VARCHAR(25)
+                                         );
+ 
+MySQL  localhost:33060+ ssl  imdb  SQL >  INSERT INTO USER_DETAILS 
                                            VALUES 
                                            ('US_ID_11','RIYA'),
                                            ('US_ID_12','ZOYA'),
@@ -145,6 +170,19 @@ Records: 4  Duplicates: 0  Warnings: 0
 | US_ID_13 | LAKSHMI   |
 | US_ID_14 | DINESH    |
 +----------+-----------+
+
+ MySQL  localhost:33060+ ssl  imdb  SQL > CREATE TABLE USER_MOVIE_REVIEW
+                                          (
+                                           USER_ID VARCHAR(25),
+                                           MOVIE_ID VARCHAR(25),
+                                           REVIEW_ID VARCHAR(25) PRIMARY KEY,
+                                           REVIEW_1 VARCHAR(50) NOT NULL, 
+                                           REVIEW_2 VARCHAR(50), 
+                                           REVIEW_3 VARCHAR(50),
+                                           FOREIGN KEY (MOVIE_ID) REFERENCES MOVIE_DETAILS(MOVIE_ID),
+                                           FOREIGN KEY (USER_ID) REFERENCES USER_DETAILS(USER_ID)
+                                          );
+Query OK, 0 rows affected (0.0757 sec)
 
  MySQL  localhost:33060+ ssl  imdb  SQL > INSERT INTO USER_MOVIE_REVIEW 
                                           VALUES
@@ -195,6 +233,63 @@ Records: 4  Duplicates: 0  Warnings: 0
 | AC_ID_24  | AJITH KUMAR |            9000000000 | ACTOR   | RACER          | NULL     | MOV_ID_104 |
 +-----------+-------------+-----------------------+---------+----------------+----------+------------+
 4 rows in set (0.0006 sec)
+QL  localhost:33060+ ssl  imdb  SQL > ALTER TABLE ARTIST_DETAILS
+                                      DROP COLUMN
+                                       SKILL_1;
+Query OK, 0 rows affected (0.1288 sec)
+
+Records: 0  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > ALTER TABLE ARTIST_DETAILS
+                                          DROP COLUMN 
+                                            SKILL_2;
+Query OK, 0 rows affected (0.0308 sec)
+
+Records: 0  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > ALTER TABLE ARTIST_DETAILS 
+                                          DROP COLUMN 
+                                            SKILL_3;
+Query OK, 0 rows affected (0.0298 sec)
+
+Records: 0  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM ARTIST_DETAILS;
++-----------+-------------+-----------------------+------------+
+| ARTIST_ID | ARTIST_NAME | ARTIST_CONTACT_MOBILE | MOVIE_ID   |
++-----------+-------------+-----------------------+------------+
+| AC_ID_21  | MANIKANDAN  |            9090909090 | MOV_ID_100 |
+| AC_ID_22  | DHANUSH     |            7070770770 | MOV_ID_102 |
+| AC_ID_23  | SANDHANAM   |            1234567908 | MOV_ID_101 |
+| AC_ID_24  | AJITH KUMAR |            9000000000 | MOV_ID_104 |
++-----------+-------------+-----------------------+------------+
+4 rows in set (0.0030 sec)
+ MySQL  localhost:33060+ ssl  imdb  SQL > CREATE TABLE ARTIST_SKILL
+                                          (
+                                             SKILL_ID VARCHAR(25) PRIMARY KEY, 
+                                             ARTIST_ID VARCHAR(25) NOT NULL,
+                                             SKILL_1 VARCHAR(50) NOT NULL,
+                                             SKILL_2 VARCHAR(50), 
+                                             SKILL_3 VARCHAR(50), 
+                                             FOREIGN KEY (ARTIST_ID) REFERENCES ARTIST_DETAILS(ARTIST_ID)
+                                          );
+Query OK, 0 rows affected (0.0578 sec)
+
+ MySQL  localhost:33060+ ssl  imdb  SQL > INSERT INTO ARTIST_SKILL VALUES
+                                          ('SK_ID_11','AC_ID_21','ACTOR','WRITER','DIRECTOR'),
+                                          ('SK_ID_12','AC_ID_22','ACTOR','LYRICAL WRITER','DIRECTOR'),
+                                          ('SK_ID_13','AC_ID_23','ACTOR','COMEDIAN',NULL),
+                                          ('SK_ID_14','AC_ID_24','ACTOR','RACER',NULL);
+Query OK, 4 rows affected (0.0521 sec)
+
+Records: 4  Duplicates: 0  Warnings: 0
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT * FROM ARTIST_SKILL;
++----------+-----------+---------+----------------+----------+
+| SKILL_ID | ARTIST_ID | SKILL_1 | SKILL_2        | SKILL_3  |
++----------+-----------+---------+----------------+----------+
+| SK_ID_11 | AC_ID_21  | ACTOR   | WRITER         | DIRECTOR |
+| SK_ID_12 | AC_ID_22  | ACTOR   | LYRICAL WRITER | DIRECTOR |
+| SK_ID_13 | AC_ID_23  | ACTOR   | COMEDIAN       | NULL     |
+| SK_ID_14 | AC_ID_24  | ACTOR   | RACER          | NULL     |
++----------+-----------+---------+----------------+----------+
+4 rows in set (0.0015 sec)
 
 +---------------------------------------------------------------------------------------------------------------+---------------------------------------+
 
@@ -237,7 +332,10 @@ Records: 4  Duplicates: 0  Warnings: 0
 
 Additional Queries:
 # Sub-Query to find the movie_name using review_id
- MySQL  localhost:33060+ ssl  imdb  SQL > SELECT MOVIE_NAME FROM MOVIE_DETAILS WHERE MOVIE_ID=(SELECT MOVIE_ID FROM USER_MOVIE_REVIEW WHERE REVIEW_ID ='RW_ID_01');
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT MOVIE_NAME 
+                                          FROM MOVIE_DETAILS 
+                                          WHERE 
+                                          MOVIE_ID=(SELECT MOVIE_ID FROM USER_MOVIE_REVIEW WHERE REVIEW_ID ='RW_ID_01');
 +------------+
 | MOVIE_NAME |
 +------------+
@@ -247,7 +345,12 @@ Additional Queries:
 
 # JOIN concept 
 # To find the Artist name using movie_id and review_id from 3 different tables.
- MySQL  localhost:33060+ ssl  imdb  SQL > SELECT AD.ARTIST_NAME, MD.MOVIE_NAME FROM ARTIST_DETAILS AD JOIN MOVIE_DETAILS MD ON MD.MOVIE_ID=AD.MOVIE_ID WHERE MD.MOVIE_ID=(SELECT MOVIE_ID FROM USER_MOVIE_REVIEW WHERE REVIEW_ID ='RW_ID_01');
+ MySQL  localhost:33060+ ssl  imdb  SQL > SELECT AD.ARTIST_NAME, MD.MOVIE_NAME
+                                          FROM ARTIST_DETAILS AD 
+                                          JOIN MOVIE_DETAILS MD
+                                          ON MD.MOVIE_ID=AD.MOVIE_ID 
+                                          WHERE
+                                          MD.MOVIE_ID=(SELECT MOVIE_ID FROM USER_MOVIE_REVIEW WHERE REVIEW_ID ='RW_ID_01');
 +-------------+------------+
 | ARTIST_NAME | MOVIE_NAME |
 +-------------+------------+
