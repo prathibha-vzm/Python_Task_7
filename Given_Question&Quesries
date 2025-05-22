@@ -115,7 +115,7 @@ END$$
 
 DELIMITER ;
 
-# To run the procedure in command prompt  
+# To store the procedure
 \source C:\Users\91956\Desktop\GENRE_PROCEDURE.sql
 Query OK, 0 rows affected (0.0116 sec)
 
